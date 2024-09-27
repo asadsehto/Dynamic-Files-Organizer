@@ -302,7 +302,7 @@ public class Dash extends Application {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-    }
+    }//
 
     private static void moveFileWithDelay(Path sourcePath, Path targetPath, int delayInSeconds) {
         try {
