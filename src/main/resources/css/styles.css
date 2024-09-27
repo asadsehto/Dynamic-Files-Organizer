@@ -1,0 +1,93 @@
+.anchor-pane {
+    fileTypeMap.put(".txt", "Text Files");
+    fileTypeMap.put(".pdf", "PDF Files");
+    fileTypeMap.put(".csv", "CSV Files");
+    fileTypeMap.put(".pptx", "PPTX Files");
+    fileTypeMap.put(".exe", "EXE Files");
+    fileTypeMap.put(".docx", "WORD Files");
+    fileTypeMap.put(".jpg", "Image Files");
+    fileTypeMap.put(".png", "Image Files");
+    fileTypeMap.put(".zip", "Compressed Files");
+    fileTypeMap.put(".mp4", "Video Files");
+    fileTypeMap.put(".mp3", "Audio Files");
+    fileTypeMap.put(".java", "Code Files");
+    fileTypeMap.put(".class", "Code Files");
+    fileTypeMap.put(".html", "Web Files");
+    fileTypeMap.put(".css", "Web Files");
+    fileTypeMap.put(".js", "Web Files");
+    fileTypeMap.put(".sql", "Database Files");
+    fileTypeMap.put(".db", "Database Files");
+    fileTypeMap.put(".json", "Database Files");
+    fileTypeMap.put(".xml", "Database Files");
+    fileTypeMap.put(".xls", "Excel Files");
+    fileTypeMap.put(".xlsx", "Excel Files");
+    fileTypeMap.put(".ppt", "PPT Files");
+
+    private void startMonitoring() {
+    if (isMonitoring) {
+stopMonitoring();
+    return;
+}
+
+    isMonitoring = true;
+    logArea.appendText("Monitoring started...\n");
+
+    Path watchDir = Paths.get(watchDirField.getText());
+    if (!Files.isDirectory(watchDir)) {
+    logArea.appendText("Invalid directory: " + watchDir + "\n");
+    return;
+}
+
+    try {
+        watchService = FileSystems.getDefault().newWatchService();
+        watchDir.register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE);
+
+        monitoringThread = new Thread(() -> {
+        while (isMonitoring) {
+        WatchKey key;
+        try {
+            key = watchService.take();
+        } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return;
+    }
+
+        for (WatchEvent<?> event : key.pollEvents()) {
+        WatchEvent.Kind<?> kind = event.kind();
+        Path filePath = (Path) event.context();
+        logArea.appendText(kind.name() + ": " + filePath + "\n");
+
+    // Move file if necessary
+    if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
+    moveFile(filePath);
+    }
+    }
+
+        if (!key.reset()) {
+        break;
+    }
+    }
+    });
+
+        monitoringThread.start();
+    } catch (IOException e) {
+    logArea.appendText("Error starting monitoring: " + e.getMessage() + "\n");
+}
+}
+
+    private void stopMonitoring() {
+    isMonitoring = false;
+    if (watchService != null) {
+    try {
+        watchService.close();
+    } catch (IOException e) {
+    logArea.appendText("Error closing WatchService: " + e.getMessage() + "\n");
+}
+}
+    if (monitoringThread != null) {
+    monitoringThread.interrupt();
+}
+    logArea.appendText("Monitoring stopped.\n");
+}
+
+}
